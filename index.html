@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 자리 배정 (Smart Seat Manager)</title>
+   
+    <!-- [Fonts] Pretendard (CDN) -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+   
+    <!-- [Fonts] Google Fonts Import -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Do+Hyeon&family=Gamja+Flower&family=Grandiflora+One&family=Gugi&family=Noto+Serif+KR:wght@200..900&display=swap" rel="stylesheet">
+
+    <style>
+        /* * [Design System]
+         * v11.1 Professional Edition + User Manual
+         */
+        :root {
+            /* Default Font Stack */
+            --base-font: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+           
+            /* Light Mode */
+            --bg-color: #f4f5f9;
+            --bg-gradient: linear-gradient(180deg, #ffffff 0%, #f4f5f9 100%);
+            --container-bg: #ffffff;
+            --text-main: #1b1e26;
+            --text-sub: #596070;
+            --text-placeholder: #8b95a1;
+           
+            --primary-color: #3182F6;
+            --primary-gradient: linear-gradient(135deg, #3182F6, #005ce3);
+            --primary-light: rgba(49, 130, 246, 0.08);
+            --primary-text: #3182F6;
+           
+            --danger-color: #fa4646;
+            --warning-color: #ff9e2c;
+            --success-color: #27c076;
+           
+            --border-radius: 20px;
+            --input-bg: #f8f9fa;
+            --box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+            --card-border: 1px solid rgba(0,0,0,0.06);
+            --focus-ring: 0 0 0 3px rgba(49, 130, 246, 0.15);
+           
+            --transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+           
+            --tab-bg: rgba(0,0,0,0.04);
+            --tab-active-bg: #ffffff;
+            --tab-active-shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+            --seat-bg: #ffffff;
+            --seat-border: 1px solid #e1e4e8;
+            --seat-shadow: 0 2px 6px rgba(0,0,0,0.02);
+           
+            --modal-bg: #ffffff;
+            --blackboard-bg: #2c3e50;
+            --blackboard-text: #ffffff;
+        }
+
+        /* Dark Mode (Deep Navy) */
+        [data-theme="dark"] {
+            --bg-color: #111111;
+            --bg-gradient: linear-gradient(180deg, #1a1c24 0%, #111111 100%);
+            --container-bg: #1e2028;
+            --text-main: #ffffff;
+            --text-sub: #9ca3af;
+            --text-placeholder: #52525b;
+           
+            --primary-color: #4a94ff;
+            --primary-gradient: linear-gradient(135deg, #4a94ff, #2563eb);
+            --primary-light: rgba(74, 148, 255, 0.1);
+            --primary-text: #60a5fa;
+           
+            --input-bg: #272a33;
+            --box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+            --card-border: 1px solid rgba(255,255,255,0.06);
+            --focus-ring: 0 0 0 3px rgba(74, 148, 255, 0.25);
+           
+            --tab-bg: rgba(0,0,0,0.3);
+            --tab-active-bg: #32353e;
+            --tab-active-shadow: 0 4px 12px rgba(0,0,0,0.4);
+
+            --seat-bg: #272a33;
+            --seat-border: 1px solid rgba(255,255,255,0.08);
+            --seat-shadow: 0 4px 12px rgba(0,0,0,0.2);
+           
+            --modal-bg: #272a33;
+            --blackboard-bg: #374151;
+            --blackboard-text: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: var(--base-font);
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 120px;
+            transition: background 0.4s ease, color 0.4s ease;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header Area */
+        .header-wrapper {
+            position: relative;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        /* Top Right Controls */
+        .top-controls {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            background: var(--container-bg);
+            border: var(--card-border);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            color: var(--text-main);
+        }
+        .control-btn:hover { transform: translateY(-2px); }
+        .control-btn span { pointer-events: none; }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 15px;
+            color: var(--text-sub);
+            margin-bottom: 24px;
+            font-weight: 400;
+        }
+
+        /* Segmented Tabs */
+        .class-tabs {
+            display: flex;
+            background: var(--tab-bg);
+            padding: 5px;
+            border-radius: 16px;
+            margin-bottom: 36px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            gap: 2px;
+            border: var(--card-border);
+            backdrop-filter: blur(10px);
+        }
+        .class-tabs::-webkit-scrollbar { display: none; }
+       
+        .tab-btn {
+            flex: 1 0 auto;
+            border: none;
+            background: transparent;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 50px;
+            white-space: nowrap;
+            position: relative;
+        }
+       
+        .tab-btn.active {
+            background: var(--tab-active-bg);
+            color: var(--text-main);
+            box-shadow: var(--tab-active-shadow);
+        }
+
+        .tab-btn.has-data::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 5px;
+            height: 5px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: var(--container-bg);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 24px;
+            transition: var(--transition);
+            border: var(--card-border);
+            overflow: hidden;
+            position: relative;
+        }
+       
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 4px 0;
+            user-select: none;
+        }
+       
+        .card-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-header h2 span {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-sub);
+            background: var(--input-bg);
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+       
+        .card-content {
+            transition: max-height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, margin-top 0.4s ease;
+            max-height: 2000px;
+            opacity: 1;
+        }
+       
+        .card.collapsed .card-content {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            pointer-events: none;
+        }
+       
+        .toggle-icon {
+            font-size: 12px;
+            color: var(--text-sub);
+            transition: transform 0.3s ease;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--input-bg);
+        }
+        .card.collapsed .toggle-icon { transform: rotate(-90deg); }
+
+        /* Inputs */
+        .input-group { display: flex; gap: 12px; margin-bottom: 20px; }
+        .input-wrapper { flex: 1; display: flex; flex-direction: column; }
+
+        label {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input[type="number"], input[type="text"], textarea {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 15px;
+            border: 1px solid transparent;
+            background-color: var(--input-bg);
+            border-radius: 14px;
+            color: var(--text-main);
+            transition: var(--transition);
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            background-color: var(--container-bg);
+            border-color: var(--primary-color);
+            box-shadow: var(--focus-ring);
+        }
+
+        textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+
+        /* Modern Buttons */
+        .btn {
+            background: var(--primary-gradient);
+            color: #fff;
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(49, 130, 246, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-pulse {
+            animation: pulse-shadow 3s infinite;
+        }
+        @keyframes pulse-shadow {
+            0% { box-shadow: 0 0 0 0 rgba(49, 130, 246, 0.6); }
+            70% { box-shadow: 0 0 0 12px rgba(49, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(49, 130, 246, 0); }
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(49, 130, 246, 0.35);
+        }
+        .btn:active { transform: translateY(0) scale(0.98); }
+
+        .btn-secondary { background: var(--primary-light); color: var(--primary-text); box-shadow: none; }
+        .btn-secondary:hover { background: rgba(49, 130, 246, 0.15); box-shadow: none; transform: translateY(-1px); }
+       
+        .btn-warning { background: rgba(255, 158, 44, 0.1); color: var(--warning-color); box-shadow: none; }
+        .btn-warning:hover { background: rgba(255, 158, 44, 0.2); transform: translateY(-1px); }
+        .btn-warning.active { background: var(--warning-color); color: #fff; }
+
+        .btn-icon {
+            background: var(--input-bg);
+            border: var(--card-border);
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--text-main);
+            transition: var(--transition);
+        }
+        .btn-icon:hover { background: var(--container-bg); border-color: var(--text-sub); transform: rotate(-15deg); }
+
+        .btn-text {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            font-size: 13px;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 8px;
+            font-weight: 500;
+        }
+        .btn-text:hover { color: var(--primary-text); }
+
+        /* Info Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .dash-item {
+            background: var(--input-bg);
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+            border: var(--card-border);
+        }
+        .dash-label { font-size: 12px; color: var(--text-sub); display: block; margin-bottom: 4px; }
+        .dash-value { font-size: 16px; font-weight: 700; color: var(--text-main); }
+        .dash-value.highlight { color: var(--primary-color); }
+
+        /* Grid Area */
+        #seat-grid-container {
+            overflow-x: auto;
+            padding: 10px 10px 30px 10px;
+            text-align: center;
+            scroll-behavior: smooth;
+        }
+        #seat-grid-container::-webkit-scrollbar { height: 6px; }
+        #seat-grid-container::-webkit-scrollbar-track { background: transparent; }
+        #seat-grid-container::-webkit-scrollbar-thumb { background: var(--text-placeholder); border-radius: 10px; }
+
+        .blackboard-area {
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto 24px auto;
+            background-color: var(--blackboard-bg);
+            color: var(--blackboard-text);
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            letter-spacing: 1px;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .seat-grid {
+            display: grid;
+            gap: 12px;
+            min-width: 100%;
+            margin-top: 10px;
+        }
+
+        .seat {
+            position: relative;
+            background-color: var(--seat-bg);
+            border: var(--seat-border);
+            border-radius: 12px;
+            height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            box-shadow: var(--seat-shadow);
+            user-select: none;
+        }
+        .seat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            z-index: 5;
+            border-color: var(--primary-color);
+        }
+
+        .seat.is-locked { border: 2px solid var(--text-main); background-color: var(--seat-bg); }
+        .seat.is-locked::after {
+            content: "";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            background: var(--container-bg);
+            padding: 1px 5px;
+            border-radius: 8px;
+            border: var(--seat-border);
+            color: var(--text-main);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .seat.is-assigned {
+            background-color: var(--primary-light);
+            border-color: var(--primary-color);
+            color: var(--primary-text);
+        }
+       
+        .seat.pop-animation { animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        @keyframes popIn {
+            0% { transform: scale(0.5) translateY(10px); opacity: 0; }
+            60% { transform: scale(1.05) translateY(-5px); opacity: 1; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .seat.is-disabled {
+            background-color: var(--input-bg);
+            border-color: transparent;
+            opacity: 0.6; /* 가시성을 위해 투명도 약간 조정 */
+            pointer-events: none;
+            box-shadow: none;
+        }
+        .seat.is-disabled::before {
+            content: ''; position: absolute; inset: 6px; border: 2px dashed var(--text-placeholder); border-radius: 12px; opacity: 0.3;
+        }
+        .seat.is-disabled .seat-exclude-btn { pointer-events: auto; opacity: 1; background: var(--text-sub); color:white; transform:rotate(45deg); }
+       
+        /* [Modified] Graphic Cross Mark (X) for disabled seats */
+        .seat.is-disabled::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+           
+            /* CSS 그라데이션으로 X자 그리기 (선 두께 조절 가능) */
+            background:
+                linear-gradient(to top left, transparent calc(50% - 2px), var(--text-placeholder) calc(50% - 2px), var(--text-placeholder) calc(50% + 2px), transparent calc(50% + 2px)),
+                linear-gradient(to top right, transparent calc(50% - 2px), var(--text-placeholder) calc(50% - 2px), var(--text-placeholder) calc(50% + 2px), transparent calc(50% + 2px));
+           
+            opacity: 0.5;
+            /* [Fix] Input(z-index: 1)보다 높고, Button(z-index: 20)보다 낮게 설정 */
+            z-index: 10;
+            pointer-events: none;
+            /* 중심축을 기준으로 커지는 애니메이션 */
+            transform-origin: center;
+            animation: markXPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes markXPop {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
+
+        .seat.is-selected-swap {
+            border: 2px solid var(--warning-color);
+            background-color: rgba(255, 158, 44, 0.05);
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 0 0 4px rgba(255, 158, 44, 0.15);
+        }
+
+        .seat-input {
+            width: 90%;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 700;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            padding: 0;
+            z-index: 1;
+        }
+        .seat-input:focus { box-shadow: none; border-radius: 0; border-bottom: 2px solid var(--primary-color); }
+
+        .seat-exclude-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--input-bg);
+            color: var(--text-sub);
+            border: 1px solid rgba(0,0,0,0.05);
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            /* [Fix] 가위표(z-index: 10)보다 위에 오도록 설정 */
+            z-index: 20;
+        }
+        .seat-exclude-btn:hover { background-color: var(--danger-color); color: white; border-color: transparent; transform: rotate(90deg); }
+
+        /* Gap Cell */
+        .gap-cell {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Custom Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            backdrop-filter: blur(5px);
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+       
+        .modal-card {
+            background: var(--modal-bg);
+            width: 90%;
+            max-width: 320px;
+            border-radius: 24px;
+            padding: 28px;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            transform: scale(0.95);
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            border: var(--card-border);
+        }
+        .modal-overlay.active .modal-card { transform: scale(1); }
+       
+        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-main); }
+        .modal-message { font-size: 15px; color: var(--text-sub); margin-bottom: 24px; line-height: 1.5; }
+       
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-size: 14px; transition: var(--transition); }
+        .modal-btn.cancel { background: var(--input-bg); color: var(--text-sub); }
+        .modal-btn.cancel:hover { background: var(--text-placeholder); color: white; }
+        .modal-btn.confirm { background: var(--primary-color); color: white; box-shadow: 0 4px 12px rgba(49, 130, 246, 0.3); }
+        .modal-btn.confirm:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+        /* Manual Modal Specifics */
+        #manualModal .modal-card {
+            max-width: 480px;
+            text-align: left;
+            padding: 30px;
+        }
+        #manualModal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        #manualModal .close-icon {
+            background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-sub);
+        }
+        #manualModal .modal-body {
+            max-height: 60vh;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            font-size: 15px;
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-right: 8px;
+        }
+        #manualModal .modal-body h3 {
+            font-size: 17px;
+            margin-top: 24px;
+            margin-bottom: 10px;
+            color: var(--primary-text);
+            font-weight: 700;
+        }
+        #manualModal .modal-body h3:first-child { margin-top: 0; }
+        #manualModal .modal-body ul { padding-left: 20px; margin-bottom: 10px; color: var(--text-sub); }
+        #manualModal .modal-body li { margin-bottom: 6px; }
+       
+        #manualModal .modal-body::-webkit-scrollbar { width: 4px; }
+        #manualModal .modal-body::-webkit-scrollbar-thumb { background: var(--text-placeholder); border-radius: 4px; }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17, 17, 17, 0.85);
+            z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s;
+            backdrop-filter: blur(8px);
+        }
+        .loading-overlay.active { opacity: 1; pointer-events: auto; }
+       
+        .spinner {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--primary-color);
+            border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+       
+        /* Dynamic Loading Text */
+        .loading-text { font-size: 18px; font-weight: 600; color: white; margin-top: 10px; letter-spacing: -0.01em; }
+
+        /* Confetti Container */
+        #confetti-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; overflow: hidden;
+        }
+        .confetti { position: absolute; width: 8px; height: 8px; opacity: 0; }
+
+        /* Ad Banner */
+        .ad-banner {
+            width: 100%; height: 80px; background: var(--input-bg);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-placeholder); font-size: 12px; border-radius: 16px; margin: 24px 0;
+            border: 1px dashed var(--card-border); opacity: 0.6;
+        }
+
+        /* [Added] Ad Disclaimer */
+        .ad-disclaimer {
+            font-size: 11px;
+            color: var(--text-placeholder);
+            text-align: center;
+            margin-top: -16px;
+            margin-bottom: 24px;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        /* Toast */
+        #toast {
+            visibility: hidden; min-width: 200px;
+            background: rgba(30, 33, 40, 0.9); color: #fff;
+            text-align: center; border-radius: 40px; padding: 12px 24px;
+            position: fixed; z-index: 11000; left: 50%; bottom: 60px;
+            transform: translateX(-50%) translateY(20px);
+            font-size: 14px; font-weight: 500; opacity: 0;
+            transition: all 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(4px);
+            /* [Fix] 토스트가 버튼 클릭을 방해하지 않도록 설정 */
+            pointer-events: none;
+        }
+        #toast.show { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(0); }
+       
+        /* Footer controls */
+        .footer-controls { display: flex; justify-content: center; gap: 20px; margin-top: 40px; font-size: 13px; }
+        .footer-btn {
+            background: none; border: none; color: var(--text-sub); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.2s; font-weight: 500;
+        }
+        .footer-btn:hover { color: var(--primary-color); }
+
+        .hidden { display: none !important; }
+        .print-only-date { display: none; }
+
+        @media print {
+            /* [Fix] 인쇄 시 배경 및 색상 강제 적용 (선명하게) */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+           
+            body { background: white !important; padding: 0; color: black !important; }
+            .container { max-width: 100%; padding: 0; margin: 0; }
+           
+            /* 숨길 요소들 */
+            .input-group, .btn, .ad-banner, .ad-disclaimer, .status-bar, footer, .seat-exclude-btn, .card-header, #toast, .btn-text, .class-tabs, .btn-icon, .theme-toggle, .footer-controls, .top-controls { display: none !important; }
+           
+            /* 카드 스타일 초기화 (테두리 제거 등) */
+            .card { box-shadow: none; border: none; padding: 0; margin: 0; display: block !important; background: transparent !important; }
+            .card-content { max-height: none !important; opacity: 1 !important; display: block !important; }
+           
+            #step1-container, #step3-container { display: none !important; }
+            #step2-container { display: block !important; }
+            #seat-grid-container { overflow: visible; padding: 0; }
+           
+            /* 좌석 스타일 (흑백 인쇄 최적화) */
+            .seat {
+                background: white !important;
+                border: 2px solid #000 !important;
+                color: black !important;
+                height: 80px;
+                box-shadow: none !important;
+                border-radius: 8px !important;
+            }
+            .seat.is-locked { border: 4px solid #000 !important; }
+            .seat.is-locked::after { display: none; }
+            .seat.is-assigned {
+                background: white !important;
+                color: black !important;
+                border-color: #000 !important;
+                font-weight: 900;
+            }
+            .seat-input {
+                font-size: 18pt !important;
+                color: black !important;
+                font-weight: 900 !important;
+                -webkit-text-fill-color: black;
+            }
+           
+            .print-only-date { display: block; text-align: center; margin-bottom: 30px; font-size: 16px; color: #000; font-weight: bold; }
+            h1 { text-align: center; font-size: 32px; margin-bottom: 10px; color: black !important; display: block !important; }
+            .blackboard-area { background: white !important; color: black !important; border: 3px solid #000 !important; }
+            .dashboard-grid { display: none !important; }
+            p { color: black !important; }
+            .gap-cell { display: block !important; border: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Confetti Canvas (Overlay) -->
+    <div id="confetti-container"></div>
+
+    <!-- Loading -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loadingText" class="loading-text">데이터 처리 중...</p>
+    </div>
+
+    <!-- Custom Modal (Alert/Confirm) -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-title" id="modalTitle">알림</div>
+            <div class="modal-message" id="modalMessage">내용</div>
+            <div class="modal-actions" id="modalActions"></div>
+        </div>
+    </div>
+
+    <!-- Manual Modal -->
+    <div id="manualModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">사용 설명서</div>
+                <button class="close-icon" onclick="closeManual()">×</button>
+            </div>
+            <div class="modal-body">
+                <h3>1. 교실 만들기 (Step 1)</h3>
+                <p>책상 배열의 가로(열)와 세로(행) 개수, 그리고 분단 수를 입력하여 교실 레이아웃을 생성하세요.</p>
+               
+                <h3>2. 자리 세팅하기 (Step 2)</h3>
+                <ul>
+                    <li><strong>고정석 지정:</strong> 자리의 입력창에 이름을 직접 입력하면 '고정석'이 되어 랜덤 배정 시 바뀌지 않습니다.</li>
+                    <li><strong>자리 제외:</strong> 우측 상단의 'X' 버튼을 누르면 해당 자리는 배정에서 제외됩니다. (다시 누르면 복구)</li>
+                    <li><strong>좌석 맞교환:</strong> [좌석 맞교환] 버튼을 누르고 두 자리를 차례로 클릭하면 서로 위치를 바꿉니다.</li>
+                </ul>
+
+                <h3>3. 학생 명단 입력 (Step 3)</h3>
+                <p>번호순 또는 이름순을 선택하여 명단을 입력하세요. '텍스트 자동 정렬' 기능을 사용하면 쉼표나 줄바꿈을 자동으로 정리해줍니다.</p>
+
+                <h3>4. 데이터 관리</h3>
+                <p>하단의 [데이터 백업] 버튼으로 현재 설정을 파일로 저장하고, [데이터 복원]으로 언제든 다시 불러올 수 있습니다.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn confirm" onclick="closeManual()">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast">메시지</div>
+   
+    <!-- File Input for Restore -->
+    <input type="file" id="restoreInput" accept=".json" style="display:none;" onchange="handleRestoreFile(this)">
+
+    <div class="container">
+        <!-- Header & Toggle -->
+        <div class="header-wrapper">
+            <header>
+                <h1>스마트 자리 배정</h1>
+                <div id="printDate" class="print-only-date"></div>
+                <p class="subtitle" id="subtitleText">1반의 좌석 배치와 학생 명단을 관리하세요</p>
+            </header>
+           
+            <div class="top-controls">
+                <!-- Manual Button -->
+                <button class="control-btn" onclick="openManual()" title="사용 설명서">
+                    <span style="font-weight:700;">?</span>
+                </button>
+                <!-- Font Toggle -->
+                <button class="control-btn" onclick="cycleFont()" title="글꼴 변경">
+                    <span style="font-weight:700;">가</span>
+                </button>
+                <!-- Theme Toggle -->
+                <button class="control-btn" onclick="toggleTheme()" title="테마 변경">
+                    <span id="themeIcon"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="class-tabs">
+            <button class="tab-btn active" onclick="switchClass(1)">1반</button>
+            <button class="tab-btn" onclick="switchClass(2)">2반</button>
+            <button class="tab-btn" onclick="switchClass(3)">3반</button>
+            <button class="tab-btn" onclick="switchClass(4)">4반</button>
+            <button class="tab-btn" onclick="switchClass(5)">5반</button>
+            <button class="tab-btn" onclick="switchClass(6)">6반</button>
+            <button class="tab-btn" onclick="switchClass(7)">7반</button>
+            <button class="tab-btn" onclick="switchClass(8)">8반</button>
+        </div>
+
+        <div class="ad-banner"><span class="ad-label">광고 영역 (상단)</span></div>
+        <p class="ad-disclaimer">"이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."</p>
+
+        <!-- Step 1 -->
+        <section id="step1-container" class="card">
+            <div class="card-header" onclick="toggleCard('step1-container')">
+                <h2><span>Step 1</span> 교실 규격</h2>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="card-content">
+                <div style="margin-top: 24px;">
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <label>가로 (열)</label>
+                            <input type="number" id="cols" value="6" min="1" max="10">
+                        </div>
+                        <div class="input-wrapper">
+                            <label>세로 (행)</label>
+                            <input type="number" id="rows" value="5" min="1" max="10">
+                        </div>
+                        <!-- Group Count Input -->
+                        <div class="input-wrapper">
+                            <label>분단 수</label>
+                            <input type="number" id="groups" value="3" min="1" max="10">
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="generateGrid()">책상 배치 생성</button>
+                    <div style="text-align: right; margin-top: 12px;">
+                        <button class="btn-text" onclick="clearClassData()">현재 반 데이터 초기화</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 2 -->
+        <section id="step2-container" class="card hidden">
+            <div class="card-header">
+                <h2><span>Step 2</span> 좌석 배치</h2>
+                <div style="display:flex; gap:12px;">
+                    <button id="undoBtn" class="btn-icon" onclick="undo()" title="실행 취소" style="opacity:0.5; pointer-events:none;">↺</button>
+                    <button id="swapBtn" class="btn btn-warning" style="width: auto; padding: 10px 16px; font-size: 13px;" onclick="toggleSwapMode()">좌석 맞교환</button>
+                </div>
+            </div>
+           
+            <div style="margin-top:20px;">
+                <div class="dashboard-grid">
+                    <div class="dash-item">
+                        <span class="dash-label">전체 좌석</span>
+                        <span class="dash-value" id="stat-total">0</span>
+                    </div>
+                    <div class="dash-item">
+                        <span class="dash-label">배정 가능</span>
+                        <span class="dash-value" id="stat-available">0</span>
+                    </div>
+                    <div class="dash-item">
+                        <span class="dash-label">배정 완료</span>
+                        <span class="dash-value highlight" id="stat-filled">0</span>
+                    </div>
+                </div>
+
+                <div class="blackboard-area">
+                    <span style="font-size: 20px;"></span> 칠 판 (교 탁)
+                </div>
+
+                <div id="seat-grid-container">
+                    <div id="seatGrid" class="seat-grid"></div>
+                </div>
+               
+                <p style="text-align: center; font-size: 13px; color: var(--text-placeholder); margin-top: 16px; line-height: 1.6;">
+                    ① 배정 시작 전에 자리에 미리 값을 입력해둘 경우, 고정석이 설정됩니다.<br>
+                    ② 자리의 x 표시를 누를 경우, 해당 자리는 배정에서 제외됩니다.
+                </p>
+            </div>
+        </section>
+
+        <!-- Step 3 -->
+        <section id="step3-container" class="card hidden">
+            <div class="card-header" onclick="toggleCard('step3-container')">
+                <h2><span>Step 3</span> 학생 명단</h2>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="card-content">
+                <div style="margin-top: 24px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div style="display:flex; gap:16px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; font-weight:500;">
+                            <input type="radio" name="mode" value="number" checked onchange="toggleMode()"> 번호순
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; font-weight:500;">
+                            <input type="radio" name="mode" value="name" onchange="toggleMode()"> 이름순
+                        </label>
+                    </div>
+                    <button id="cleanBtn" class="btn-text hidden" onclick="cleanNames()" style="color:var(--primary-color);">텍스트 자동 정렬 </button>
+                </div>
+
+                <div id="mode-number">
+                    <div class="input-wrapper" style="margin-bottom: 16px;">
+                        <label>총 인원 수</label>
+                        <input type="number" id="totalCount" placeholder="예: 30" onchange="autoSave()">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>제외할 번호 (쉼표로 구분)</label>
+                        <input type="text" id="excludeNumbers" placeholder="예: 5, 12" onchange="autoSave()">
+                    </div>
+                </div>
+
+                <div id="mode-name" class="hidden">
+                    <div class="input-wrapper">
+                        <label>학생 이름 (엔터로 구분)</label>
+                        <textarea id="nameList" placeholder="김철수&#13;&#10;이영희" onchange="autoSave()"></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actions -->
+        <div id="action-area" class="hidden" style="margin-bottom: 40px;">
+            <button class="btn btn-pulse" onclick="startArrangement()">
+                <span style="font-size: 20px;"></span> 배정 시작
+            </button>
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+                <button class="btn btn-secondary" style="flex: 1;" onclick="clearOnlyAssigned()">결과 초기화</button>
+                <button id="printBtn" class="btn btn-secondary hidden" style="flex: 1;" onclick="printResult()"> 인쇄 / PDF</button>
+            </div>
+        </div>
+
+        <!-- Footer Data Controls -->
+        <div class="footer-controls">
+            <button class="footer-btn" onclick="backupData()">
+                <span style="font-size:16px;"></span> 데이터 백업
+            </button>
+            <button class="footer-btn" onclick="document.getElementById('restoreInput').click()">
+                <span style="font-size:16px;"></span> 데이터 복원
+            </button>
+        </div>
+
+        <div class="ad-banner"><span class="ad-label">광고 영역 (하단)</span></div>
+        <p class="ad-disclaimer">"이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."</p>
+
+    </div>
+
+    <script>
+        // --- State Management ---
+        let currentClassId = 1;
+        let isGridGenerated = false;
+        let isSwapMode = false;
+        let swapSource = null;
+        let historyStack = [];
+
+        // Font List
+        const fonts = [
+            { name: "Pretendard", family: '"Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif' },
+            { name: "Noto Serif Korean", family: '"Noto Serif KR", serif' },
+            { name: "Do Hyeon", family: '"Do Hyeon", sans-serif' },
+            { name: "Gamja Flower", family: '"Gamja Flower", cursive' },
+            { name: "Gugi", family: '"Gugi", cursive' },
+            { name: "Bagel Fat One", family: '"Bagel Fat One", system-ui' },
+            { name: "Grandiflora One", family: '"Grandiflora One", cursive', weight: 'bold' }
+        ];
+        let currentFontIndex = 0;
+
+        // --- Init ---
+        window.onload = function() {
+            initTheme();
+            initFont();
+            updateTabIndicators();
+            loadState(1);
+        };
+
+        // --- Theme Management ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            updateThemeIcon(next);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('themeIcon');
+            // [Fix] 테마에 따른 아이콘(이모지) 추가
+            icon.innerText = theme === 'dark' ? '🌙' : '☀️';
+        }
+
+        // --- Font Management ---
+        function initFont() {
+            const savedFontIndex = localStorage.getItem('fontIndex');
+            if (savedFontIndex !== null) {
+                currentFontIndex = parseInt(savedFontIndex);
+            }
+            applyFont();
+        }
+
+        function cycleFont() {
+            currentFontIndex = (currentFontIndex + 1) % fonts.length;
+            localStorage.setItem('fontIndex', currentFontIndex);
+            applyFont();
+            showToast(`글꼴이 '${fonts[currentFontIndex].name}'(으)로 변경되었습니다.`);
+        }
+
+        function applyFont() {
+            const font = fonts[currentFontIndex];
+            document.documentElement.style.setProperty('--base-font', font.family);
+           
+            if (font.weight) {
+                document.body.style.fontWeight = font.weight;
+            } else {
+                document.body.style.fontWeight = '';
+            }
+        }
+
+        // --- Manual Modal ---
+        function openManual() {
+            document.getElementById('manualModal').classList.add('active');
+        }
+        function closeManual() {
+            document.getElementById('manualModal').classList.remove('active');
+        }
+
+        // --- Class Switching ---
+        function switchClass(id) {
+            if (currentClassId === id) return;
+            currentClassId = id;
+           
+            document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+                if ((idx + 1) === id) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+           
+            document.getElementById('subtitleText').innerText = `${id}반의 좌석 배치와 학생 명단을 관리하세요`;
+            historyStack = [];
+            updateUndoBtn();
+            loadState(id);
+        }
+
+        function updateTabIndicators() {
+            document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+                const classId = idx + 1;
+                const raw = localStorage.getItem(`school_seat_v6_class${classId}`);
+                if (raw) btn.classList.add('has-data');
+                else btn.classList.remove('has-data');
+            });
+        }
+
+        // --- History / Undo ---
+        function pushHistory() {
+            if (!isGridGenerated) return;
+            if (historyStack.length > 10) historyStack.shift();
+           
+            const snapshot = {
+                seats: Array.from(document.querySelectorAll('.seat')).map(s => ({
+                    val: s.querySelector('input').value,
+                    dis: s.classList.contains('is-disabled'),
+                    lock: s.classList.contains('is-locked'),
+                    assign: s.classList.contains('is-assigned')
+                }))
+            };
+            historyStack.push(snapshot);
+            updateUndoBtn();
+        }
+
+        function undo() {
+            if (historyStack.length === 0) return;
+            const prev = historyStack.pop();
+            const seats = document.querySelectorAll('.seat');
+           
+            prev.seats.forEach((data, i) => {
+                if(seats[i]) {
+                    const s = seats[i];
+                    const inp = s.querySelector('input');
+                    inp.value = data.val;
+                   
+                    s.classList.remove('is-disabled', 'is-locked', 'is-assigned');
+                    inp.disabled = false;
+
+                    if(data.dis) { s.classList.add('is-disabled'); inp.disabled = true; }
+                    if(data.lock) s.classList.add('is-locked');
+                    if(data.assign) s.classList.add('is-assigned');
+                    adjustFontSize(inp);
+                }
+            });
+            updateUndoBtn();
+            updateStatus();
+            autoSave();
+            showToast("이전 상태로 복구되었습니다.");
+        }
+
+        function updateUndoBtn() {
+            const btn = document.getElementById('undoBtn');
+            if (historyStack.length > 0) {
+                btn.style.opacity = 1;
+                btn.style.pointerEvents = 'auto';
+            } else {
+                btn.style.opacity = 0.5;
+                btn.style.pointerEvents = 'none';
+            }
+        }
+
+        // --- Grid Generation ---
+        async function generateGrid(fromLoad = false) {
+            if (isGridGenerated && !fromLoad) {
+                const ok = await showConfirm("규격 재설정", "현재 배치가 모두 초기화됩니다.<br>계속하시겠습니까?");
+                if (!ok) return;
+            }
+
+            const rows = parseInt(document.getElementById('rows').value) || 5;
+            const cols = parseInt(document.getElementById('cols').value) || 6;
+            const groups = parseInt(document.getElementById('groups').value) || 1;
+           
+            const gridContainer = document.getElementById('seatGrid');
+            const wrapper = document.getElementById('seat-grid-container');
+
+            gridContainer.innerHTML = '';
+            document.getElementById('printBtn').classList.add('hidden');
+           
+            let gridTemplate = '';
+            const colsPerGroup = Math.ceil(cols / groups);
+           
+            for (let i = 0; i < cols; i++) {
+                gridTemplate += '1fr ';
+                if ((i + 1) % colsPerGroup === 0 && i < cols - 1) {
+                    gridTemplate += '30px '; // Gap width
+                }
+            }
+            gridContainer.style.gridTemplateColumns = gridTemplate;
+           
+            const gapsCount = Math.floor((cols - 1) / colsPerGroup);
+            const minWidth = (cols * 70) + (gapsCount * 30);
+            gridContainer.style.minWidth = `${minWidth}px`;
+
+            let studentIndex = 0;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'seat';
+                    cell.dataset.index = studentIndex++;
+                    cell.onclick = (e) => handleSeatClick(e, cell);
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'seat-input';
+                    input.addEventListener('input', (e) => {
+                        adjustFontSize(e.target);
+                        checkLocked(e);
+                        updateStatus();
+                        autoSave();
+                    });
+
+                    const btn = document.createElement('button');
+                    btn.className = 'seat-exclude-btn';
+                    btn.innerHTML = '✕';
+                    btn.onclick = (e) => { e.stopPropagation(); toggleExclude(cell); };
+
+                    cell.appendChild(input);
+                    cell.appendChild(btn);
+                    gridContainer.appendChild(cell);
+                   
+                    if ((c + 1) % colsPerGroup === 0 && c < cols - 1) {
+                        const gap = document.createElement('div');
+                        gap.className = 'gap-cell';
+                        gridContainer.appendChild(gap);
+                    }
+                }
+            }
+
+            wrapper.style.display = 'block';
+            ['step2-container', 'step3-container', 'action-area'].forEach(id =>
+                document.getElementById(id).classList.remove('hidden')
+            );
+           
+            isGridGenerated = true;
+            updateStatus();
+
+            if (!fromLoad) {
+                pushHistory();
+                document.getElementById('step1-container').classList.add('collapsed');
+                autoSave();
+            }
+        }
+
+        function adjustFontSize(input) {
+            const len = input.value.length;
+            if (len > 4) input.style.fontSize = "14px";
+            else if (len > 3) input.style.fontSize = "16px";
+            else input.style.fontSize = "18px";
+        }
+
+        function updateStatus() {
+            if (!isGridGenerated) return;
+            const seats = document.querySelectorAll('.seat');
+            let total = seats.length;
+            let excluded = 0;
+            let filled = 0;
+
+            seats.forEach(seat => {
+                if (seat.classList.contains('is-disabled')) excluded++;
+                else {
+                    const val = seat.querySelector('input').value.trim();
+                    if (val !== "") filled++;
+                }
+            });
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-available').innerText = total - excluded;
+            document.getElementById('stat-filled').innerText = filled;
+        }
+
+        // --- Interactions ---
+        function toggleExclude(cell) {
+            pushHistory();
+            const input = cell.querySelector('input');
+            const isDisabled = cell.classList.contains('is-disabled');
+           
+            if (isDisabled) {
+                cell.classList.remove('is-disabled');
+                input.disabled = false;
+            } else {
+                cell.classList.add('is-disabled');
+                input.value = '';
+                input.disabled = true;
+                cell.classList.remove('is-locked', 'is-assigned');
+            }
+            updateStatus();
+            autoSave();
+        }
+
+        function checkLocked(e) {
+            const cell = e.target.parentElement;
+            if (e.target.value.trim() !== "") {
+                cell.classList.add('is-locked');
+                cell.classList.remove('is-assigned');
+            } else {
+                cell.classList.remove('is-locked');
+            }
+        }
+
+        function toggleSwapMode() {
+            isSwapMode = !isSwapMode;
+            const btn = document.getElementById('swapBtn');
+            const seats = document.querySelectorAll('.seat');
+            const inputs = document.querySelectorAll('.seat-input');
+           
+            if (isSwapMode) {
+                btn.classList.add('active');
+                btn.innerText = "취소";
+                seats.forEach(s => s.style.cursor = "pointer");
+                inputs.forEach(inp => inp.style.pointerEvents = 'none');
+                showToast("맞교환할 두 좌석을 차례로 선택하세요");
+            } else {
+                btn.classList.remove('active');
+                btn.innerText = "좌석 맞교환";
+                swapSource = null;
+                seats.forEach(s => {
+                    s.style.cursor = "default";
+                    s.classList.remove('is-selected-swap');
+                });
+                inputs.forEach(inp => inp.style.pointerEvents = 'auto');
+            }
+        }
+
+        function handleSeatClick(e, cell) {
+            if (!isSwapMode || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            if (cell.classList.contains('is-disabled')) return;
+
+            if (!swapSource) {
+                swapSource = cell;
+                cell.classList.add('is-selected-swap');
+            } else {
+                if (swapSource === cell) {
+                    swapSource.classList.remove('is-selected-swap');
+                    swapSource = null;
+                    return;
+                }
+               
+                pushHistory();
+                const in1 = swapSource.querySelector('input');
+                const in2 = cell.querySelector('input');
+                [in1.value, in2.value] = [in2.value, in1.value];
+               
+                [swapSource, cell].forEach(s => {
+                    s.classList.remove('is-selected-swap');
+                    const v = s.querySelector('input').value.trim();
+                    if(v && !s.classList.contains('is-locked')) s.classList.add('is-assigned');
+                    else if(!v) s.classList.remove('is-assigned');
+                    adjustFontSize(s.querySelector('input'));
+                });
+
+                swapSource = null;
+                showToast("좌석이 교환되었습니다");
+                updateStatus();
+                autoSave();
+                toggleSwapMode();
+            }
+        }
+
+        // --- Logic: Assignment ---
+        async function startArrangement() {
+            if (!isGridGenerated) return;
+            if (isSwapMode) toggleSwapMode();
+
+            pushHistory();
+
+            const seats = document.querySelectorAll('.seat');
+            let availableIndices = [];
+            let lockedNames = [];
+
+            seats.forEach((seat, i) => {
+                const val = seat.querySelector('input').value.trim();
+                if (seat.classList.contains('is-disabled')) return;
+                if (seat.classList.contains('is-locked') && val) {
+                    lockedNames.push(val);
+                } else {
+                    availableIndices.push(i);
+                }
+            });
+
+            let students = getStudentList();
+            if (!students) return;
+
+            let toAssign = students.filter(s => !lockedNames.includes(s));
+
+            if (toAssign.length > availableIndices.length) {
+                showAlert("좌석 부족", `남은 자리: ${availableIndices.length}개<br>학생 수: ${toAssign.length}명`);
+                return;
+            }
+
+            // Dynamic Loading Text
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            overlay.classList.add('active');
+           
+            loadingText.innerText = "학생 명단 분석 중...";
+            await new Promise(r => setTimeout(r, 600));
+            loadingText.innerText = "배치 최적화 진행 중...";
+            await new Promise(r => setTimeout(r, 800));
+
+            const shuffled = shuffle(toAssign);
+           
+            seats.forEach(s => {
+                s.classList.remove('pop-animation');
+                if(!s.classList.contains('is-locked')) s.classList.remove('is-assigned');
+            });
+
+            availableIndices.forEach((idx, i) => {
+                const seat = seats[idx];
+                const input = seat.querySelector('input');
+               
+                if (i < shuffled.length) {
+                    input.value = shuffled[i];
+                    seat.classList.add('is-assigned');
+                    seat.style.animationDelay = `${i * 0.05}s`;
+                    seat.classList.add('pop-animation');
+                } else {
+                    input.value = "";
+                    seat.classList.remove('is-assigned');
+                }
+                adjustFontSize(input);
+            });
+
+            overlay.classList.remove('active');
+            document.getElementById('step2-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('printBtn').classList.remove('hidden');
+            updateStatus();
+            autoSave();
+           
+            setTimeout(fireConfetti, 500);
+        }
+
+        // [Feature] Confetti Effect
+        function fireConfetti() {
+            const colors = ['#3182F6', '#ff9e2c', '#fa4646', '#27c076', '#a855f7'];
+            const container = document.getElementById('confetti-container');
+            container.innerHTML = '';
+           
+            const createParticle = (x, y) => {
+                const p = document.createElement('div');
+                p.className = 'confetti';
+                p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                p.style.left = x + 'px';
+                p.style.top = y + 'px';
+                p.style.transform = `rotate(${Math.random() * 360}deg)`;
+                container.appendChild(p);
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 2 + Math.random() * 4;
+                let posX = x, posY = y;
+                let velX = Math.cos(angle) * velocity;
+                let velY = Math.sin(angle) * velocity;
+                let opacity = 1;
+
+                const animate = () => {
+                    velY += 0.1;
+                    posX += velX;
+                    posY += velY;
+                    opacity -= 0.015;
+                    p.style.left = posX + 'px';
+                    p.style.top = posY + 'px';
+                    p.style.opacity = opacity;
+                    if (opacity > 0) requestAnimationFrame(animate);
+                    else p.remove();
+                };
+                requestAnimationFrame(animate);
+            };
+
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+            for(let i=0; i<80; i++) createParticle(cx, cy);
+        }
+
+        function getStudentList() {
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            let list = [];
+
+            if (mode === 'number') {
+                const total = parseInt(document.getElementById('totalCount').value);
+                if (!total || total < 1) { showAlert("입력 확인", "총 인원 수를 입력해 주세요."); return null; }
+                const exStr = document.getElementById('excludeNumbers').value;
+                const excludes = exStr.split(',').map(s => s.trim());
+                for (let i = 1; i <= total; i++) {
+                    if (!excludes.includes(String(i))) list.push(String(i));
+                }
+            } else {
+                const text = document.getElementById('nameList').value;
+                if (!text.trim()) { showAlert("입력 확인", "학생 명단을 입력해 주세요."); return null; }
+                list = text.split(/[,\n]+/).map(s => s.trim()).filter(s => s);
+            }
+            return list;
+        }
+
+        function cleanNames() {
+            const area = document.getElementById('nameList');
+            const raw = area.value;
+            if(!raw.trim()) return;
+            const clean = raw.split(/[\s,]+/).map(s => s.trim()).filter(s => s).join('\n');
+            area.value = clean;
+            autoSave();
+            showToast("명단이 깔끔하게 정리되었습니다");
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // --- Data Persistence ---
+        function autoSave() {
+            if (!isGridGenerated) return;
+            const data = {
+                rows: document.getElementById('rows').value,
+                cols: document.getElementById('cols').value,
+                groups: document.getElementById('groups').value,
+                totalCount: document.getElementById('totalCount').value,
+                exclude: document.getElementById('excludeNumbers').value,
+                names: document.getElementById('nameList').value,
+                mode: document.querySelector('input[name="mode"]:checked').value,
+                seats: Array.from(document.querySelectorAll('.seat')).map(s => ({
+                    val: s.querySelector('input').value,
+                    dis: s.classList.contains('is-disabled'),
+                    lock: s.classList.contains('is-locked'),
+                    assign: s.classList.contains('is-assigned')
+                }))
+            };
+            localStorage.setItem(`school_seat_v6_class${currentClassId}`, JSON.stringify(data));
+            updateTabIndicators();
+        }
+
+        function loadState(classId) {
+            const raw = localStorage.getItem(`school_seat_v6_class${classId}`);
+            if (!raw) {
+                isGridGenerated = false;
+                document.getElementById('seatGrid').innerHTML = '';
+                document.getElementById('step2-container').classList.add('hidden');
+                document.getElementById('step3-container').classList.add('hidden');
+                document.getElementById('action-area').classList.add('hidden');
+                document.getElementById('step1-container').classList.remove('collapsed');
+                return;
+            }
+            try {
+                const d = JSON.parse(raw);
+                document.getElementById('rows').value = d.rows;
+                document.getElementById('cols').value = d.cols;
+                // Load group data (if exists from older versions defaulting to 3 is handled by input value)
+                document.getElementById('groups').value = d.groups || 1;
+                document.getElementById('totalCount').value = d.totalCount;
+                document.getElementById('excludeNumbers').value = d.exclude;
+                document.getElementById('nameList').value = d.names;
+               
+                const radio = document.querySelector(`input[name="mode"][value="${d.mode}"]`);
+                if(radio) { radio.checked = true; toggleMode(); }
+
+                generateGrid(true);
+
+                const seats = document.querySelectorAll('.seat');
+                d.seats.forEach((sd, i) => {
+                    if (seats[i]) {
+                        const s = seats[i];
+                        const inp = s.querySelector('input');
+                        inp.value = sd.val;
+                        adjustFontSize(inp);
+                        if(sd.dis) { s.classList.add('is-disabled'); inp.disabled = true; }
+                        if(sd.lock) s.classList.add('is-locked');
+                        if(sd.assign) {
+                            s.classList.add('is-assigned');
+                            document.getElementById('printBtn').classList.remove('hidden');
+                        }
+                    }
+                });
+                updateStatus();
+                document.getElementById('step1-container').classList.add('collapsed');
+            } catch(e) { console.error(e); }
+        }
+
+        // --- Backup & Restore ---
+        function backupData() {
+            const backup = {};
+            for(let i=1; i<=8; i++) {
+                const key = `school_seat_v6_class${i}`;
+                const data = localStorage.getItem(key);
+                if(data) backup[key] = JSON.parse(data);
+            }
+           
+            const blob = new Blob([JSON.stringify(backup, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const date = new Date().toISOString().slice(0,10);
+            a.href = url;
+            a.download = `자리배치_백업_${date}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("백업 파일이 다운로드되었습니다.");
+        }
+
+        function handleRestoreFile(input) {
+            const file = input.files[0];
+            if(!file) return;
+           
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    const count = Object.keys(backup).length;
+                   
+                    const ok = await showConfirm("데이터 복원", `총 ${count}개 반의 데이터를 복원하시겠습니까?<br>기존 데이터는 덮어씌워집니다.`);
+                    if(!ok) { input.value = ''; return; }
+                   
+                    for(const key in backup) {
+                        if(key.startsWith('school_seat_v6_class')) {
+                            localStorage.setItem(key, JSON.stringify(backup[key]));
+                        }
+                    }
+                   
+                    showToast("복원이 완료되었습니다.");
+                    updateTabIndicators();
+                    loadState(currentClassId);
+                } catch(err) {
+                    showAlert("오류", "올바른 백업 파일이 아닙니다.");
+                }
+                input.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        async function clearClassData() {
+            const ok = await showConfirm("데이터 초기화", `현재 [${currentClassId}반]의 데이터를 모두 삭제하시겠습니까?`);
+            if(ok) {
+                localStorage.removeItem(`school_seat_v6_class${currentClassId}`);
+                location.reload();
+            }
+        }
+
+        async function clearOnlyAssigned() {
+            const ok = await showConfirm("결과 초기화", "고정석을 제외한 배정 결과만 삭제하시겠습니까?");
+            if (!ok) return;
+            pushHistory();
+            document.querySelectorAll('.seat').forEach(s => {
+                if(!s.classList.contains('is-locked') && !s.classList.contains('is-disabled')) {
+                    s.querySelector('input').value = "";
+                    s.classList.remove('is-assigned');
+                }
+            });
+            updateStatus();
+            autoSave();
+            document.getElementById('printBtn').classList.add('hidden');
+        }
+
+        function toggleCard(id) { document.getElementById(id).classList.toggle('collapsed'); }
+
+        function toggleMode() {
+            const isNum = document.querySelector('input[name="mode"]:checked').value === 'number';
+            document.getElementById('mode-number').classList.toggle('hidden', !isNum);
+            document.getElementById('mode-name').classList.toggle('hidden', isNum);
+            document.getElementById('cleanBtn').classList.toggle('hidden', isNum);
+            autoSave();
+        }
+
+        // [Fix] 인쇄 기능 개선 (안정성 확보)
+        function printResult() {
+            // 날짜 설정
+            const d = new Date();
+            document.getElementById('printDate').innerText = `${currentClassId}반 자리 배치 - ${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+           
+            // 안내 메시지
+            showToast(" 인쇄 미리보기를 준비합니다...");
+           
+            // 브라우저 렌더링 대기 후 인쇄 실행
+            setTimeout(() => {
+                try {
+                    window.focus(); // 창 포커스 확보
+                    window.print(); // 인쇄 다이얼로그 호출
+                } catch (e) {
+                    showAlert("인쇄 오류", "브라우저 설정 문제로 인쇄 창을 열 수 없습니다.<br>Ctrl+P (Mac: Cmd+P)를 눌러 직접 인쇄해주세요.");
+                }
+            }, 800); // 0.8초 대기
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function showConfirm(title, msg) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('customModal');
+                document.getElementById('modalTitle').innerText = title;
+                document.getElementById('modalMessage').innerHTML = msg;
+                const actions = document.getElementById('modalActions');
+                actions.innerHTML = '';
+               
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'modal-btn cancel';
+                cancelBtn.innerText = '취소';
+                cancelBtn.onclick = () => { modal.classList.remove('active'); resolve(false); };
+               
+                const okBtn = document.createElement('button');
+                okBtn.className = 'modal-btn confirm';
+                okBtn.innerText = '확인';
+                okBtn.onclick = () => { modal.classList.remove('active'); resolve(true); };
+               
+                actions.appendChild(cancelBtn);
+                actions.appendChild(okBtn);
+                modal.classList.add('active');
+            });
+        }
+
+        function showAlert(title, msg) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('customModal');
+                document.getElementById('modalTitle').innerText = title;
+                document.getElementById('modalMessage').innerHTML = msg;
+                const actions = document.getElementById('modalActions');
+                actions.innerHTML = '';
+               
+                const okBtn = document.createElement('button');
+                okBtn.className = 'modal-btn confirm';
+                okBtn.innerText = '확인';
+                okBtn.onclick = () => { modal.classList.remove('active'); resolve(true); };
+               
+                actions.appendChild(okBtn);
+                modal.classList.add('active');
+            });
+        }
+    </script>
+</body>
+</html>
