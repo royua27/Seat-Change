@@ -1087,7 +1087,7 @@
         </div>
 
         <div class="ad-banner"><span class="ad-label"></span></div>
-        <p class="ad-disclaimer"></p>
+        <p class="ad-disclaimer">"이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."</p>
 
     </div>
 
@@ -1379,6 +1379,8 @@
                                 
                                 if (currentGroupIndex < groupCount && seatInGroupIndex < perGroup) {
                                     createSeatElement(gridContainer, studentIndex++);
+                                    // [Modified] Add group index to dataset
+                                    gridContainer.lastElementChild.dataset.group = currentGroupIndex; 
                                 } else {
                                     // 빈 공간 (모둠 인원이 부족하거나 모둠이 없는 곳)
                                     const gap = document.createElement('div');
@@ -1605,17 +1607,66 @@
 
             const shuffled = shuffle(toAssign);
             
+            const layoutMode = document.querySelector('input[name="layout"]:checked').value;
+            const finalAssignments = {}; // Map<SeatIndex, StudentName>
+
+            if (layoutMode === 'group') {
+                // [Modified] Group Mode: Round-Robin Distribution
+                const groupMap = {}; // { groupId: [seatIndex, seatIndex...] }
+                
+                availableIndices.forEach(idx => {
+                    const gId = seats[idx].dataset.group;
+                    // If simple layout changed but dataset not updated (edge case), handle gracefully
+                    if (gId !== undefined) {
+                        if(!groupMap[gId]) groupMap[gId] = [];
+                        groupMap[gId].push(idx);
+                    } else {
+                        // Fallback for seats without group ID
+                        if(!groupMap['default']) groupMap['default'] = [];
+                        groupMap['default'].push(idx);
+                    }
+                });
+
+                const gKeys = Object.keys(groupMap).sort((a,b) => Number(a) - Number(b));
+                let currentG = 0;
+
+                shuffled.forEach(student => {
+                    // Try to find a group with space, starting round-robin
+                    let placed = false;
+                    for(let i=0; i<gKeys.length; i++) {
+                        const targetG = gKeys[(currentG + i) % gKeys.length];
+                        if (groupMap[targetG].length > 0) {
+                            const seatIdx = groupMap[targetG].shift(); // Take first slot
+                            finalAssignments[seatIdx] = student;
+                            currentG = (currentG + i + 1) % gKeys.length; // Next student goes to next group
+                            placed = true;
+                            break;
+                        }
+                    }
+                });
+
+            } else {
+                // Linear Logic (Solo/Pair) - Fill from front (index 0)
+                availableIndices.forEach((seatIdx, i) => {
+                    if (i < shuffled.length) {
+                        finalAssignments[seatIdx] = shuffled[i];
+                    }
+                });
+            }
+            
+            // Apply to DOM
             seats.forEach(s => {
                 s.classList.remove('pop-animation');
                 if(!s.classList.contains('is-locked')) s.classList.remove('is-assigned');
             });
 
-            availableIndices.forEach((idx, i) => {
+            availableIndices.forEach((idx, i) => { // Use i for animation delay calculation
                 const seat = seats[idx];
                 const input = seat.querySelector('input');
-                
-                if (i < shuffled.length) {
-                    input.value = shuffled[i];
+                const student = finalAssignments[idx];
+
+                if (student) {
+                    input.value = student;
                     seat.classList.add('is-assigned');
                     seat.style.animationDelay = `${i * 0.05}s`;
                     seat.classList.add('pop-animation');
